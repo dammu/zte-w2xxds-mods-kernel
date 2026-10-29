@@ -1,0 +1,18 @@
+# build outputs and device images never go into the repo
+out/
+*.img
+*.bin
+*.ko
+*.tgz
+*.tar.gz
+*.zip
+*.apk
+# private working copies (OEM module dumps, data snapshots, VM keys)
+oem-modules/
+*.pem.key
+*_rsa
+*ed25519*
+
+# private maintainer notes and device-pulled VINTF matrices stay local (tracked in the private workspace repo)
+AGENTS.md
+vintf/

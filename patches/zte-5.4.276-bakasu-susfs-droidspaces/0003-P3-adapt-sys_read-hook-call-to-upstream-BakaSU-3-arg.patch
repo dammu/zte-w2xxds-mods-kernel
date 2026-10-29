@@ -1,0 +1,71 @@
+From f49b1ad7666db2a73fcd49c19060aeb51e353efe Mon Sep 17 00:00:00 2001
+From: kb <kb@local>
+Date: Thu, 29 Oct 2026 15:14:50 +0000
+Subject: [PATCH 3/4] P3: adapt sys_read hook call to upstream BakaSU 3-arg
+ signature
+
+---
+ arch/arm64/configs/w203ds_defconfig | 15 ++++++++++++++-
+ fs/read_write.c                     |  2 +-
+ include/linux/odin_ksu_hooks.h      |  2 +-
+ 3 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/configs/w203ds_defconfig b/arch/arm64/configs/w203ds_defconfig
+index 87c377237..2ad9f4777 100644
+--- a/arch/arm64/configs/w203ds_defconfig
++++ b/arch/arm64/configs/w203ds_defconfig
+@@ -6094,7 +6094,6 @@ CONFIG_PKCS7_MESSAGE_PARSER=y
+ #
+ CONFIG_MODULE_SIG_KEY="certs/signing_key.pem"
+ CONFIG_SYSTEM_TRUSTED_KEYRING=y
+-CONFIG_SYSTEM_TRUSTED_KEYS="certs/zte-oem-module.x509.pem"
+ # CONFIG_SYSTEM_EXTRA_CERTIFICATE is not set
+ # CONFIG_SECONDARY_TRUSTED_KEYRING is not set
+ # CONFIG_SYSTEM_BLACKLIST_KEYRING is not set
+@@ -6522,3 +6521,17 @@ CONFIG_SPRD_SHARKL6PRO_CORESIGHT_PHY=y
+ 
+ # CONFIG_ZTE_CONTROL_I2C8_PULL_STATUS is not set
+ CONFIG_ZTE_CONTROL_I2C0_PULL_STATUS=y
++CONFIG_KSU=y
++# CONFIG_KSU_DEBUG is not set
++# CONFIG_KSU_TOOLKIT_SUPPORT is not set
++CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%"
++# CONFIG_KSU_DISABLE_MANAGER is not set
++# CONFIG_KSU_DISABLE_POLICY is not set
++CONFIG_KSU_MULTI_MANAGER_SUPPORT=y
++# CONFIG_KSU_TRACEPOINT_HOOK is not set
++CONFIG_KSU_MANUAL_HOOK=y
++# CONFIG_KSU_SUSFS is not set
++CONFIG_KSU_MANUAL_HOOK_AUTO_SETUID_HOOK=y
++CONFIG_KSU_MANUAL_HOOK_AUTO_INITRC_HOOK=y
++CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK=y
++CONFIG_SYSTEM_TRUSTED_KEYS="certs/zte-oem-module.x509.pem"
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 659a78d29..c7166225e 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -605,7 +605,7 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
+ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
+ {
+ #ifdef CONFIG_KSU_SUSFS
+-	ksu_handle_sys_read(fd);
++	ksu_handle_sys_read(fd, &buf, &count);
+ #endif
+ 	return ksys_read(fd, buf, count);
+ }
+diff --git a/include/linux/odin_ksu_hooks.h b/include/linux/odin_ksu_hooks.h
+index d1f62a990..deb24a03e 100644
+--- a/include/linux/odin_ksu_hooks.h
++++ b/include/linux/odin_ksu_hooks.h
+@@ -10,7 +10,7 @@ struct filename;
+ #ifdef CONFIG_KSU
+ int ksu_handle_execveat(int *fd, struct filename **filename, void *argv, void *envp, int *flags);
+ int ksu_handle_post_execve(int *fd, const char *filename, void *argv, void *envp, int *flags, int *retval);
+-void ksu_handle_sys_read(unsigned int fd);
++int ksu_handle_sys_read(unsigned int fd, char __user **buf_ptr, size_t *count_ptr);
+ void ksu_handle_vfs_fstat(int fd, loff_t *size);
+ #ifdef CONFIG_KSU_SUSFS
+ #define TIF_PROC_IN_KSU_EXECVE 61
+-- 
+2.43.0
+
