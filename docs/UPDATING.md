@@ -77,4 +77,13 @@ SUSFS 官方只维护 5.10+ 的 GKI 分支，5.4 是回移的，所以这是最�
 
 ## 7. 版本记录
 
-把每次刷过的组合记在一处（内核 tag/提交、BakaSU 提交、SUSFS 版本、配置片段、boot 镜像 sha256、刷写日期、结果）。本仓库的 [DESIGN.md](DESIGN.md) 阶段表就是这样的记录，每刷一版追加一行。
+把每次刷过的组合记在一处（内核 tag/提交、BakaSU 提交、SUSFS 版本、配置片段、boot 镜像 sha256、刷写日期、结果）。本仓库的 [DESIGN.md](DESIGN.md) 阶段表和发布记录就是这样的记录，每刷一版追加一行。
+
+## 8. 发布到 GitHub Releases
+
+只发布**已经在设备上刷过并通过 FLASHING.md 验收**的构建，流程：
+
+1. 从构建目录取 `boot_a-*.img`、`Image`、`.config`，加上配套的管理器 APK（`apksigner verify --print-certs` 核对签名是 `manager_sign.h` 里的证书），按 `<类型>-w203ds-<固件>-bakasu<版本码>-susfs<版本>-<阶段>` 命名，`sha256sum * > SHA256SUMS`。
+2. 先提交文档：DESIGN.md 的阶段表 / 发布记录追加一行，README 的下载表若字段有变也改。
+3. `gh release create <tag> <文件…> --title … --notes-file …`，tag 用 `v<YYYYMMDD>-<阶段>`，打在刚提交的 commit 上。说明里写清：固件、BakaSU 版本码/uapi 与提交、SUSFS 版本、关掉的选项、验证过与没验证的、回退方法。
+4. 发布后 `gh release view <tag>` 核对资产数量和大小，再用 `gh release download` 抽一个文件比对 sha256。

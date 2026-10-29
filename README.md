@@ -2,7 +2,7 @@
 
 A rebuildable Linux 5.4.276 kernel for the ZTE W2xxDS "cloud PC" tablet (Unisoc T760 / ums9620, Android 13) that adds **BakaSU** (a KernelSU fork, built in), **SUSFS 2.3.0** and the kernel options **Droidspaces** containers need, while keeping every prebuilt vendor module loading and reporting the same `uname -a` as the stock kernel.
 
-This repository is the recipe, not a flashable download: patches against ZTE's open-source kernel drop, config fragments, build/audit/packing scripts and documentation. You bring your own device backup, source tree and toolchain. **Only the W203DS on firmware 20251013 has been tested.**
+This repository is primarily the recipe: patches against ZTE's open-source kernel drop, config fragments, build/audit/packing scripts and documentation. A build that has been flashed and tested on the author's device is attached to [Releases](https://github.com/dammu/zte-w2xxds-mods-kernel/releases). **Only the W203DS on firmware 20251013 has been tested.**
 
 ---
 
@@ -33,6 +33,20 @@ W2xxDS 是中兴面向运营商"云电脑"场景的平板（W200 公开版、W20
 - **刻意关闭**：`CONFIG_SYSVIPC`、`CONFIG_IP6_NF_NAT`（Android 13 兼容性矩阵要求为 n，开了会弹窗）；`CONFIG_CFS_BANDWIDTH`、`CONFIG_CGROUP_PIDS`（改 kABI，原厂模块拒载）。依赖 SysV IPC 的容器软件会受限。
 - **没有**：KPM（BakaSU 不含）、LKM 模式（5.4 非 GKI 只能内置）、任何对 Play Integrity 之类远端校验的承诺。
 - 这是个人设备上的工程记录，不提供支持；刷写有砖机风险，后果自负。
+
+## 下载现成的构建
+
+[Releases](https://github.com/dammu/zte-w2xxds-mods-kernel/releases) 里是作者机器上刷过、验收过的构建，每个 release 附：
+
+| 文件 | 用途 |
+| --- | --- |
+| `boot_a-*.img` | 可直接刷 `boot_a` 的 64 MiB 镜像：原厂 20251013 的 `boot_a` 只换了 kernel，ramdisk、vbmeta 块原样 |
+| `Image-*` | 裸 kernel Image，用 `scripts/pack_boot.py` 配自己备份的原厂 `boot_a` 打包 |
+| `config-*.txt` | 该构建的完整 `.config` |
+| `BakaSU_*-arm64-v8a-release.apk` | 与内核 uapi 配套的 BakaSU 管理器（上游 CI 构建，签名证书 `d3469712…`） |
+| `SHA256SUMS` | 校验和 |
+
+**只适用于 W203DS、固件 20251013、BL 已解锁。** 其它型号或固件请不要直接刷，先按 [docs/BUILDING.md](docs/BUILDING.md) 重做 ABI 审计。刷写与验收步骤见 [docs/FLASHING.md](docs/FLASHING.md)：只写 `boot_a`，手边留着原厂 `boot_a` 和 BROM 工具，第一次开机后打开管理器装 ksud 再重启一次。
 
 ## 仓库内容
 

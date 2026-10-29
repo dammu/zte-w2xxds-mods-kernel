@@ -7,7 +7,7 @@
 - [ ] 构建日志里 diffconfig 的漂移全部是预期的；VINTF 门禁通过；ABI 审计 `MISMATCH: 0 MISSING: 0`。
 - [ ] `pack_boot.py` 校验通过，记下 boot 镜像 sha256。
 - [ ] 手边有上一版能开机的 `boot_a` 镜像，以及 BROM 工具（`spd_dump` + FDL）。
-- [ ] 管理器 APK 与内核同一版本（uapi 一致）；BakaSU 管理器不在 GitHub Releases，取 nightly.link 的 `Manager-release.zip`，签名证书必须是内核 `manager_sign.h` 里的那把（`apksigner verify --print-certs` 核对 sha256）。
+- [ ] 管理器 APK 与内核同一版本（uapi 一致）；BakaSU 上游不发布管理器 release，取 nightly.link 的 `Manager-release.zip`（本仓库每个 release 附带配套的那一个），签名证书必须是内核 `manager_sign.h` 里的那把（`apksigner verify --print-certs` 核对 sha256）。
 - [ ] 设备空闲：没有正在用的远程会话；电量够；虚拟机软件没有占着设备的 USB。
 - [ ] 如需无人值守验收：设备没有锁屏密码，`adb shell input keyevent KEYCODE_WAKEUP; wm dismiss-keyguard` 能解锁。
 

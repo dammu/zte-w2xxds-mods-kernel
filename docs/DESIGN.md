@@ -31,6 +31,12 @@
 | P4 | Droidspaces 选项 + kABI 补丁 | ABI 仍闭合；`droidspaces check` 全过；但 `SYSVIPC`/`IP6_NF_NAT` 触发 VINTF 弹窗 |
 | P4b | 去掉这两项 | 弹窗消失；`check` 必需项仍全过；**现行版本** |
 
+## 发布记录
+
+| Release | 内容 | boot 镜像 sha256 |
+| --- | --- | --- |
+| `v20261030-p4b` | P4b：BakaSU 35252 / uapi 6（上游 main `d5e9e025`）、SUSFS 2.3.0、Droidspaces 选项；固件 20251013 | `1da65bef…` |
+
 ## 验证过的与没验证的
 
 验证过：原厂模块全部加载；触摸、Wi‑Fi、蓝牙、USB；SELinux enforcing；元模块挂载、Zygisk Next、Sui、LSPosed；SUSFS 隐藏对非 su 进程生效；Droidspaces NAT 容器（CLI 与守护进程两种路径）在 SUSFS 隐藏开启时正常；开机无内核错误、无 tombstone、无 HAL 重启。
