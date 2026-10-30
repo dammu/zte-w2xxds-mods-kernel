@@ -14,7 +14,7 @@
 | Root | BakaSU 上游 main，内置 | 第三方 5.4 分支（kafuuchino）没有能用的签名管理器；上游在 5.4 上直接可编 |
 | Hook 模式 | SUSFS inline hook（最终）；手动 hook 作为无 SUSFS 的备选 | 5.4 非 GKI 不能用 tracepoint |
 | SUSFS | 2.3.0，用 kafuuchino 的 5.4 回移为基础 | 唯一现成的 5.4 + BakaSU 组合；W200DS 的 2.2.0 用作 hook 位置参照 |
-| Droidspaces | 开必需 + 推荐选项，打两个 kABI 补丁；`CFS_BANDWIDTH`/`CGROUP_PIDS` 不开 | kABI |
+| Droidspaces | 开必需 + 推荐选项，打两个 kABI 补丁；`CFS_BANDWIDTH` 用 `__GENKSYMS__` 遮挡开启；`CGROUP_PIDS` 不开 | kABI：前者只改私有结构体，后者改 `module_layout` |
 | VINTF | 关掉矩阵要求为 n 的 `SYSVIPC`、`IP6_NF_NAT`，不改矩阵 | 改矩阵是改体检表而不是改不合格项，且要动 `/system` |
 | 元模块 | 沿用 Mountify | 已验证，挂载被 SUSFS 自动隐藏，有 tmpfs 后端 |
 | SUSFS 配置 | ksud 自带的持久化配置，不用 susfs4ksu-module | 该模块只到 SUSFS 2.1，而 ksud 自带开机下发 |
@@ -29,7 +29,9 @@
 | P2b | 改用上游 BakaSU main（35252/6） | 上游直接可编，fstat hook 契约改为 `ksu_handle_newfstat_ret`；刷入后 ksud/元模块/LSPosed/Zygisk 全部恢复 |
 | P3 | SUSFS 2.3.0 inline hook | 28 文件中 4 hunk 手工合并，2 处上游契约适配；`uname` 对齐原厂；无人值守刷入一次成功 |
 | P4 | Droidspaces 选项 + kABI 补丁 | ABI 仍闭合；`droidspaces check` 全过；但 `SYSVIPC`/`IP6_NF_NAT` 触发 VINTF 弹窗 |
-| P4b | 去掉这两项 | 弹窗消失；`check` 必需项仍全过；**现行版本** |
+| P4b | 去掉这两项 | 弹窗消失；`check` 必需项仍全过 |
+| P4c | `CFS_BANDWIDTH=y` + 补丁 0006 | 先只编对象做 ABI 审计（裸开 4 个符号 CRC 变，遮挡后 0），再全量构建：`Module.symvers` 与 P4b 逐字节相同；容器 `--cpus=0.5` 实测生效 |
+| P4d | 补丁 0007：原厂 `XFRM_FRAGMENT` sysctl 只在 init_net 注册 | 停带 systemd 的容器不再 panic（P4b/P4c/原厂都有这个二次释放）；**现行版本** |
 
 ## 发布记录
 
@@ -41,7 +43,9 @@
 
 验证过：原厂模块全部加载；触摸、Wi‑Fi、蓝牙、USB；SELinux enforcing；元模块挂载、Zygisk Next、Sui、LSPosed；SUSFS 隐藏对非 su 进程生效；Droidspaces NAT 容器（CLI 与守护进程两种路径）在 SUSFS 隐藏开启时正常；开机无内核错误、无 tombstone、无 HAL 重启。
 
-没验证：长期运行（休眠唤醒、热、相机、通话）；Droidspaces `--privileged`、`-P`、systemd 镜像；依赖 SysV IPC 的容器软件；Play Integrity 之类远端校验。
+没验证：长期运行（休眠唤醒、热、相机、通话）；Droidspaces `--privileged`、`-P`；依赖 SysV IPC 的容器软件；Play Integrity 之类远端校验。
+
+注意：`USER_NS=y` 让普通进程也能建网络命名空间，所以在 P4d 之前（含 release `v20261030-p4b`）那个 xfrm 二次释放对非 root 进程也可达。用 P4b 的话不要跑会反复建 / 拆 netns 的东西，或者直接升到含 0007 的构建。
 
 ## 已知差异（相对原厂，可被观察到的）
 

@@ -1,0 +1,41 @@
+From 9b724524ba833312fc80db3ffb290733a762579c Mon Sep 17 00:00:00 2001
+From: kb <kb@local>
+Date: Fri, 30 Oct 2026 13:12:12 +0000
+Subject: [PATCH] P4d: vendor XFRM_FRAGMENT sysctl: register in init_net only,
+ clear pointers on unregister (fixes double kfree in xfrm_net_exit when two
+ netns exit back to back)
+
+---
+ net/xfrm/xfrm_sysctl.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/net/xfrm/xfrm_sysctl.c b/net/xfrm/xfrm_sysctl.c
+index 3073cd8c5..130487dc3 100644
+--- a/net/xfrm/xfrm_sysctl.c
++++ b/net/xfrm/xfrm_sysctl.c
+@@ -87,6 +87,9 @@ int __net_init xfrm_sysctl_init(struct net *net)
+ 		goto out_register;
+ 
+ #ifdef CONFIG_XFRM_FRAGMENT
++	/* one global knob: register it in init_net only (it never exits) */
++	if (!net_eq(net, &init_net))
++		return 0;
+ 	sprd_sys_ctl_table = kmemdup(sprd_net_sys_table,
+ 				     sizeof(sprd_net_sys_table), GFP_KERNEL);
+ 	if (!sprd_sys_ctl_table)
+@@ -120,9 +123,11 @@ void __net_exit xfrm_sysctl_fini(struct net *net)
+ 	unregister_net_sysctl_table(net->xfrm.sysctl_hdr);
+ 	kfree(table);
+ #ifdef CONFIG_XFRM_FRAGMENT
+-	if (sprd_xfrm_hdr) {
++	if (net_eq(net, &init_net) && sprd_xfrm_hdr) {
+ 		unregister_net_sysctl_table(sprd_xfrm_hdr);
+ 		kfree(sprd_sys_ctl_table);
++		sprd_xfrm_hdr = NULL;
++		sprd_sys_ctl_table = NULL;
+ 	}
+ #endif
+ }
+-- 
+2.43.0
+

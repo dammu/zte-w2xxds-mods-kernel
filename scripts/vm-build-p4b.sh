@@ -8,6 +8,8 @@ cat $FRAG >> $SRC/arch/arm64/configs/w203ds_defconfig
 printf -- '-android12-9-gb4a927d994a0' > $SRC/.scmversion
 MK="make -C $SRC O=$OUT ARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_COMPAT=arm-linux-androidkernel- KBUILD_BUILD_USER=zte KBUILD_BUILD_HOST=ironic-r5300-b0113-04"
 export KBUILD_BUILD_TIMESTAMP="Mon Oct 13 22:29:43 CST 2025" KBUILD_BUILD_VERSION=1
+# a vendor Makefile writes arch/arm64/include/generated/ into the source tree during the build; the next defconfig then fails with "source tree is not clean"
+rm -rf $SRC/arch/arm64/include/generated
 echo "== defconfig"; $MK w203ds_defconfig 2>&1 | grep -vE "^make|^#$" | tail -5
 echo "== KSU options in .config"; grep -E "^(# )?CONFIG_(KSU|KSU_SUSFS)" $OUT/.config
 echo "== config drift (running -> build)"; $SRC/scripts/diffconfig ~/kb/w203ds/stock/config-running.txt $OUT/.config | grep -v 'CC_VERSION_TEXT'

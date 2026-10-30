@@ -22,7 +22,8 @@ W2xxDS 是中兴面向运营商"云电脑"场景的平板（W200 公开版、W20
 
 - **BakaSU**（上游 main，内置，SUSFS inline hook 模式）；管理器用同一提交的 CI 构建。
 - **SUSFS 2.3.0**：以 kafuuchino-s 对小米 MIX 4 的 5.4 回移为基础，在 ACK 5.4.276 上手工合并了 4 处，并按上游 BakaSU 当前的 hook 契约改了 2 处。
-- **Droidspaces**：打开它要求的命名空间 / 消息队列 / devtmpfs / netfilter 选项，应用它的两个 kABI 补丁（新字段进 `ANDROID_KABI_RESERVE` 槽位，CRC 不变）。
+- **Droidspaces**：打开它要求的命名空间 / 消息队列 / devtmpfs / netfilter 选项，应用它的两个 kABI 补丁（新字段进 `ANDROID_KABI_RESERVE` 槽位，CRC 不变）；另开 `CFS_BANDWIDTH`（容器 CPU 限额 `--cpus`），用两行 `__GENKSYMS__` 遮挡把 CRC 保持不变。
+- **修一个原厂 bug**：展讯 `CONFIG_XFRM_FRAGMENT` 的 sysctl 用单个全局指针、每个网络命名空间退出都释放一次，两个 netns 先后退出就二次释放、内核 panic（停带 systemd 的容器必现）。补丁 0007 只在 init_net 注册它。
 - 构建身份（`KBUILD_BUILD_*`、`.scmversion`）与原厂对齐，`uname -a` 逐字相同。
 - 三道门禁脚本：配置漂移、VINTF 内核要求、模块 ABI；一个只换 kernel 的 boot 打包器（头部、ramdisk、vbmeta 块逐字节不变，AVB footer 只改偏移，与 APatch 的做法一致）。
 
@@ -30,7 +31,7 @@ W2xxDS 是中兴面向运营商"云电脑"场景的平板（W200 公开版、W20
 
 - **型号 / 固件**：只在 W203DS、固件 20251013（`5.4.276-android12-9-gb4a927d994a0`）上验证。同平台其它型号或固件要先用 `scripts/audit_abi.py` 重新确认 ABI 闭合，详见 [docs/BUILDING.md](docs/BUILDING.md)。
 - **前提**：BL 已解锁；手里有自己设备的原厂 `boot_a`、`vendor_boot_a` 备份和 `/vendor/lib/modules`；会用 BROM（`spd_dump`）救砖。A/B 的另一个槽在这台机器上不可启动，boot_a 坏了不会自动回退。
-- **刻意关闭**：`CONFIG_SYSVIPC`、`CONFIG_IP6_NF_NAT`（Android 13 兼容性矩阵要求为 n，开了会弹窗）；`CONFIG_CFS_BANDWIDTH`、`CONFIG_CGROUP_PIDS`（改 kABI，原厂模块拒载）。依赖 SysV IPC 的容器软件会受限。
+- **刻意关闭**：`CONFIG_SYSVIPC`、`CONFIG_IP6_NF_NAT`（Android 13 兼容性矩阵要求为 n，开了会弹窗）；`CONFIG_CGROUP_PIDS`（`module_layout` 的 CRC 变，205 个原厂模块全部拒载，实测）。依赖 SysV IPC 的容器软件会受限，容器的 `--pids-limit` 用不了。
 - **没有**：KPM（BakaSU 不含）、LKM 模式（5.4 非 GKI 只能内置）、任何对 Play Integrity 之类远端校验的承诺。
 - 这是个人设备上的工程记录，不提供支持；刷写有砖机风险，后果自负。
 
@@ -53,7 +54,7 @@ W2xxDS 是中兴面向运营商"云电脑"场景的平板（W200 公开版、W20
 | 目录 | 内容 |
 | --- | --- |
 | `docs/` | [CONTEXT](docs/CONTEXT.md) 机制 · [BUILDING](docs/BUILDING.md) 构建 · [FLASHING](docs/FLASHING.md) 刷写验收 · [UPDATING](docs/UPDATING.md) 跟进上游 · [DESIGN](docs/DESIGN.md) 决策与阶段记录 |
-| `patches/zte-5.4.276-bakasu-susfs-droidspaces/` | 现行补丁系列（5 个），打在 ZTE 开源树上 |
+| `patches/zte-5.4.276-bakasu-susfs-droidspaces/` | 现行补丁系列（7 个），打在 ZTE 开源树上 |
 | `patches/alt-manual-hook/` | 不带 SUSFS 的替代方案：BakaSU 手动 hook |
 | `configs/` | 原厂 `/proc/config.gz` 文本，以及三个配置片段（手动 hook / SUSFS / SUSFS + Droidspaces，现行为后者） |
 | `scripts/` | VM 环境、构建、ABI 与 VINTF 审计、boot 打包、证书与内置固件提取、刷后验收 |

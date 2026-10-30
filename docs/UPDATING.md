@@ -63,7 +63,7 @@ SUSFS 官方只维护 5.10+ 的 GKI 分支，5.4 是回移的，所以这是最�
 1. 改 `configs/fragments/*.fragment`（或新建一个片段，用 `FRAG=` 传给构建脚本）。
 2. 看构建日志里 `diffconfig` 打印的漂移，确认只有你想改的以及它们 `select` 出来的东西。
 3. VINTF 门禁：矩阵要求为 `n` 的选项不能开（`scripts/audit_vintf_kernel.py <.config> 5.4.276 6 <矩阵…>`）。
-4. ABI 门禁：改结构体布局的选项（例如 `CFS_BANDWIDTH`、`CGROUP_PIDS`、`SYSVIPC` 不带 kABI 补丁时）会让审计出现 MISMATCH，不能刷。
+4. ABI 门禁：改结构体布局的选项（例如 `CGROUP_PIDS`，或 `SYSVIPC`、`CFS_BANDWIDTH` 不带对应补丁时）会让审计出现 MISMATCH，不能刷。先在 VM 里只编对象（`make <vmlinux-dirs>`，不做 LTO 链接，约 2 分钟）、收集 `*.o.symversions` 喂 `audit_abi.py`，就能知道哪些符号变、能不能用 kABI 槽位或 `__GENKSYMS__` 遮掉，再决定要不要全量构建。
 5. 过了再刷，刷后跑 `postcheck.sh` 并看开机有没有弹窗。
 
 ## 6. 每次都要过的门禁（顺序）

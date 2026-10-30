@@ -1,0 +1,35 @@
+From d73a4607084ad9e1c70cd306173695456b3e9694 Mon Sep 17 00:00:00 2001
+From: kb <kb@local>
+Date: Fri, 30 Oct 2026 12:31:37 +0000
+Subject: [PATCH] P4c: hide CFS_BANDWIDTH fields of private sched structs from
+ genksyms (kABI-neutral: no OEM module sees cfs_rq/cfs_bandwidth)
+
+---
+ kernel/sched/sched.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
+index 2fccfa7c8..4038153e0 100644
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -334,7 +334,7 @@ struct rt_rq;
+ extern struct list_head task_groups;
+ 
+ struct cfs_bandwidth {
+-#ifdef CONFIG_CFS_BANDWIDTH
++#if defined(CONFIG_CFS_BANDWIDTH) && !defined(__GENKSYMS__)
+ 	raw_spinlock_t		lock;
+ 	ktime_t			period;
+ 	u64			quota;
+@@ -574,7 +574,7 @@ struct cfs_rq {
+ 	struct list_head	leaf_cfs_rq_list;
+ 	struct task_group	*tg;	/* group that "owns" this runqueue */
+ 
+-#ifdef CONFIG_CFS_BANDWIDTH
++#if defined(CONFIG_CFS_BANDWIDTH) && !defined(__GENKSYMS__)
+ 	int			runtime_enabled;
+ 	s64			runtime_remaining;
+ 
+-- 
+2.43.0
+
